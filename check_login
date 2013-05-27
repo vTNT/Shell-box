@@ -1,0 +1,30 @@
+#!/bin/bash
+#for check login monitor
+
+current_ip="/var/log/nagios/current_ip.txt"
+illegal_ip="/var/log/nagios/illegal_ip.txt"
+ip="/var/log/nagios/ip.txt"
+sed -i '$!D' $current_ip > /dev/null 
+time_save=`cat "$current_ip" | awk '{print $1 " " $2}'`
+if [ `grep "$time_save" /var/log/secure | wc -l` != 0 ];then
+	sed '1,/'"$time_save"'/d' /var/log/secure | grep Accepted | awk '{print $2 " " $3 " " $9 "-" $11}' >> $current_ip 
+else
+	cat /var/log/secure | grep Accepted | awk '{print $2 " " $3 " " $9 "-" $11}' >> $current_ip
+fi
+
+for current in `cat "$current_ip" | grep -v "$time_save" |awk '{print $3}'`; do
+	ip_status=`cat "$ip" | grep $current | wc -l`
+	if [ "$ip_status" == 1 ]; then
+		:
+	else
+		echo "$current" >> $illegal_ip
+	fi 
+done
+
+if [ `cat "$illegal_ip" | wc -l` == 0 ];then
+	echo "OK - Normal IP Login!!!"
+    exit 0
+else
+	echo "CRITICAL - `cat $illegal_ip`"
+    exit 2
+fi
