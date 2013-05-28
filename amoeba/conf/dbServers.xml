@@ -1,0 +1,75 @@
+<?xml version="1.0" encoding="gbk"?>
+
+<!DOCTYPE amoeba:dbServers SYSTEM "dbserver.dtd">
+<amoeba:dbServers xmlns:amoeba="http://amoeba.meidusa.com/">
+
+		<!-- 
+			Each dbServer needs to be configured into a Pool,
+			If you need to configure multiple dbServer with load balancing that can be simplified by the following configuration:
+			 add attribute with name virtual = "true" in dbServer, but the configuration does not allow the element with name factoryConfig
+			 such as 'multiPool' dbServer   
+		-->
+		
+	<dbServer name="abstractServer" abstractive="true">
+		<factoryConfig class="com.meidusa.amoeba.mysql.net.MysqlServerConnectionFactory">
+			<property name="manager">${defaultManager}</property>
+			<property name="sendBufferSize">64</property>
+			<property name="receiveBufferSize">128</property>
+				
+			<!-- mysql port -->
+			<property name="port">3306</property>
+			
+			<!-- mysql schema -->
+			<property name="schema">cacti</property>
+			
+			<!-- mysql user -->
+			<property name="user">root</property>
+			
+			<!--  mysql passwordi -->
+			<property name="password">xxxx</property>
+			
+		</factoryConfig>
+
+		<poolConfig class="com.meidusa.amoeba.net.poolable.PoolableObjectPool">
+			<property name="maxActive">500</property>
+			<property name="maxIdle">500</property>
+			<property name="minIdle">10</property>
+			<property name="minEvictableIdleTimeMillis">600000</property>
+			<property name="timeBetweenEvictionRunsMillis">600000</property>
+			<property name="testOnBorrow">true</property>
+			<property name="testWhileIdle">true</property>
+		</poolConfig>
+	</dbServer>
+	<!-- masterip:192.168.200.215 -->
+	<dbServer name="Master"  parent="abstractServer">
+		<factoryConfig>
+			<!-- mysql ip -->
+			<property name="ipAddress">192.168.200.215</property>
+		</factoryConfig>
+	</dbServer>
+
+	<dbServer name="Slave1"  parent="abstractServer">
+		<factoryConfig>
+			<!-- mysql ip -->
+			<property name="ipAddress">192.168.200.216</property>
+		</factoryConfig>
+	</dbServer>
+
+	<dbServer name="Slave2"  parent="abstractServer">
+		<factoryConfig>
+			<!-- mysql ip -->
+			<property name="ipAddress">192.168.200.218</property>
+		</factoryConfig>
+	</dbServer>
+	
+	<dbServer name="virtualslave" virtual="true">
+		<poolConfig class="com.meidusa.amoeba.server.MultipleServerPool">
+			<!-- Load balancing strategy: 1=ROUNDROBIN , 2=WEIGHTBASED , 3=HA-->
+			<property name="loadbalance">1</property>
+			
+			<!-- Separated by commas,such as: server1,server2,server1 -->
+			<property name="poolNames">Slave1,Slave2</property>
+		</poolConfig>
+	</dbServer>
+		
+</amoeba:dbServers>
